@@ -1,0 +1,289 @@
+{% liquid
+
+  # crowdfunding_selector.liquid
+  #
+  # A theme app extension for Shopify stores using Submarine (https://getsubmarine.com).
+  # Designed to be used on the product page to display detailed crowdfunding campaign information
+  # to customers and allow them to select a crowdfunding option.
+
+  assign current_variant = product.selected_or_first_available_variant
+  assign current_selling_plan = current_variant.selected_selling_plan_allocation.selling_plan
+  assign default_product_form_id = 'product-form-' | append: section.id
+
+  assign available_crowdfunding_campaigns = '' | split: ','
+  assign current_crowdfunding_campaign = nil
+
+  # Iterate through all crowdfunding campaigns linked to the currently selected variant to extract
+  # both a list of all crowdfunding campaigns available for display or selection, as well as details
+  # of the currently selected crowdfunding campaign, if any.
+  for crowdfunding_campaign in product.metafields.submarine.crowdfunds.value
+    assign crowdfunding_campaign_selling_plan_id = crowdfunding_campaign.selling_plan_gid | remove: 'gid://shopify/SellingPlan/' | plus: 0
+
+    for variant_crowdfunding_campaign in current_variant.metafields.submarine.crowdfunds.value
+      assign variant_crowdfunding_campaign_id = variant_crowdfunding_campaign.first.first
+
+      if crowdfunding_campaign.id == variant_crowdfunding_campaign_id
+        # Check if this is the currently selected crowdfunding campaign, and store it if so.
+        if current_selling_plan and current_selling_plan.id == crowdfunding_campaign_selling_plan_id
+          assign current_crowdfunding_campaign = crowdfunding_campaign
+        endif
+
+        # Check if this crowdfunding campaign should be available for display or selection.
+        if crowdfunding_campaign.status == 'launched'
+          assign crowdfunding_campaign_is_launched = true
+        endif
+
+        if crowdfunding_campaign.status == 'pending' and block.settings.show_pending_campaigns
+          assign crowdfunding_campaign_is_pending_and_available = true
+        endif
+
+        if crowdfunding_campaign.status == 'ended' and block.settings.show_ended_campaigns
+          assign crowdfunding_campaign_is_ended_and_available = true
+        endif
+
+        if crowdfunding_campaign.status == 'completed' and block.settings.show_completed_campaigns
+          assign crowdfunding_campaign_is_completed_and_available = true
+        endif
+
+        if crowdfunding_campaign_is_launched or crowdfunding_campaign_is_pending_and_available or crowdfunding_campaign_is_ended_and_available or crowdfunding_campaign_is_completed_and_available
+          assign crowdfunding_campaign_as_array = crowdfunding_campaign | sort
+          assign available_crowdfunding_campaigns = available_crowdfunding_campaigns | concat: crowdfunding_campaign_as_array
+        endif
+
+        break
+      endif
+    endfor
+  endfor
+
+  assign available_crowdfunding_campaigns = available_crowdfunding_campaigns | sort: 'end_at'
+  assign available_crowdfunding_campaigns_count = available_crowdfunding_campaigns | size
+
+  if current_variant.requires_selling_plan and current_crowdfunding_campaign == nil
+    assign current_crowdfunding_campaign = available_crowdfunding_campaigns | first
+  endif
+
+  assign current_crowdfunding_campaign_launch_at_formatted = current_crowdfunding_campaign.launch_at | date: '%B %e, %Y'
+  assign current_crowdfunding_campaign_end_at_formatted = current_crowdfunding_campaign.end_at | date: '%B %e, %Y'
+  assign current_crowdfunding_campaign_ended_at_formatted = current_crowdfunding_campaign.ended_at | date: '%B %e, %Y'
+  assign current_crowdfunding_campaign_fulfil_at_formatted = current_crowdfunding_campaign.fulfil_at | date: '%B %e, %Y'
+  assign current_crowdfunding_campaign_fulfilled_at_formatted = current_crowdfunding_campaign.fulfilled_at | date: '%B %e, %Y'
+  assign current_crowdfunding_campaign_completed_at_formatted = current_crowdfunding_campaign.completed_at | date: '%B %e, %Y'
+
+%}
+
+{% if available_crowdfunding_campaigns_count %}
+  <crowdfunding-selector
+    data-section-id="{{ section.id }}"
+    data-product-variant-id="{{ current_variant.id }}"
+    data-selling-plan-id="{{ current_selling_plan.id }}"
+    data-default-product-form-id="{{ default_product_form_id }}"
+    {{ block.shopify_attributes }}
+  >
+    {% if current_variant.requires_selling_plan and available_crowdfunding_campaigns_count == 1 %}
+      <input
+        type="hidden"
+        name="selling_plan"
+        value="{{ available_crowdfunding_campaigns.first.selling_plan_gid | remove: 'gid://shopify/SellingPlan/' }}"
+        form="{{ default_product_form_id }}"
+      />
+    {% else %}
+      <fieldset class="product-form__input product-form__input--pill">
+        <legend class="form__label">
+          {{ 'crowdfunding.selector.title' | t }}
+        </legend>
+
+        {% unless current_variant.requires_selling_plan %}
+          <div>
+            <input
+              id="{{ block.id }}-selling-plan-none"
+              type="radio"
+              name="selling_plan"
+              value=""
+              {% unless current_selling_plan %}checked{% endunless %}
+              form="{{ default_product_form_id }}"
+            />
+            <label
+              for="{{ block.id }}-selling-plan-none"
+            >
+              {{ 'crowdfunding.selector.no_selling_plan' | t }}
+            </label>
+          </div>
+        {% endunless %}
+
+        {% for crowdfunding_campaign in available_crowdfunding_campaigns %}
+          {% assign crowdfunding_campaign_selling_plan_id = crowdfunding_campaign.selling_plan_gid | remove: 'gid://shopify/SellingPlan/' | plus: 0 %}
+          {% assign crowdfunding_campaign_selling_plan_active = false %}
+
+          {% for selling_plan_allocation in current_variant.selling_plan_allocations %}
+            {% assign selling_plan = selling_plan_allocation.selling_plan %}
+            {% if selling_plan.id == crowdfunding_campaign_selling_plan_id %}
+              <div>
+                <input
+                  id="{{ block.id }}-selling-plan-{{ crowdfunding_campaign.id }}"
+                  type="radio"
+                  name="selling_plan"
+                  value="{{ selling_plan.id }}"
+                  {% if current_selling_plan.id == selling_plan.id %}checked{% endif %}
+                  form="{{ default_product_form_id }}"
+                />
+                <label
+                  for="{{ block.id }}-selling-plan-{{ crowdfunding_campaign.id }}"
+                >
+                  {{ selling_plan.name }}
+                </label>
+              </div>
+              {% assign crowdfunding_campaign_selling_plan_active = true %}
+              {% break %}
+            {% endif %}
+          {% endfor %}
+
+          {% unless crowdfunding_campaign_selling_plan_active %}
+            <input
+              id="{{ block.id }}-selling-plan-{{ crowdfunding_campaign.id }}"
+              type="radio"
+              name="selling_plan"
+              value=""
+              disabled
+              form="{{ default_product_form_id }}"
+            />
+            <label
+              for="{{ block.id }}-selling-plan-{{ crowdfunding_campaign.id }}"
+            >
+              {% liquid
+                case crowdfunding_campaign.status
+                  when 'ended'
+                    echo 'crowdfunding.selector.ended_campaign' | t: ended_at_formatted: current_crowdfunding_campaign_ended_at_formatted
+                  when 'completed'
+                    echo 'crowdfunding.selector.completed_campaign' | t: completed_at_formatted: current_crowdfunding_campaign_completed_at_formatted
+                endcase
+              %}
+            </label>
+          {% endunless %}
+        {% endfor %}
+      </fieldset>
+    {% endif %}
+
+    {% if block.settings.show_campaign_dates and current_crowdfunding_campaign %}
+      <p>
+        {% liquid
+          case current_crowdfunding_campaign.status
+            when 'launched'
+              if current_crowdfunding_campaign.fulfil_at
+                echo 'crowdfunding.campaign_dates.launched_with_fulfil_at' | t: end_at_formatted: current_crowdfunding_campaign_end_at_formatted, fulfil_at_formatted: current_crowdfunding_campaign_fulfil_at_formatted
+              else
+                echo 'crowdfunding.campaign_dates.launched_without_fulfil_at' | t: end_at_formatted: current_crowdfunding_campaign_end_at_formatted
+              endif
+            when 'pending'
+              if current_crowdfunding_campaign.fulfil_at
+                echo 'crowdfunding.campaign_dates.pending_with_fulfil_at' | t: launch_at_formatted: current_crowdfunding_campaign_launch_at_formatted, end_at_formatted: current_crowdfunding_campaign_end_at_formatted, fulfil_at_formatted: current_crowdfunding_campaign_fulfil_at_formatted
+              else
+                echo 'crowdfunding.campaign_dates.pending_without_fulfil_at' | t: launch_at_formatted: current_crowdfunding_campaign_launch_at_formatted, end_at_formatted: current_crowdfunding_campaign_end_at_formatted
+              endif
+            when 'ended'
+              if current_crowdfunding_campaign.goal_status == 'succeeded'
+                if current_crowdfunding_campaign.fulfil_at
+                  echo 'crowdfunding.campaign_dates.ended_successfully_with_fulfil_at' | t: ended_at_formatted: current_crowdfunding_campaign_ended_at_formatted, fulfil_at_formatted: current_crowdfunding_campaign_fulfil_at_formatted
+                else
+                  echo 'crowdfunding.campaign_dates.ended_successfully_without_fulfil_at' | t: ended_at_formatted: current_crowdfunding_campaign_ended_at_formatted
+                endif
+              else
+                echo 'crowdfunding.campaign_dates.ended_unsuccessfully' | t: ended_at_formatted: current_crowdfunding_campaign_ended_at_formatted
+              endif
+            when 'completed'
+              if current_crowdfunding_campaign.goal_status == 'succeeded'
+                echo 'crowdfunding.campaign_dates.completed_successfully' | t: ended_at_formatted: current_crowdfunding_campaign_ended_at_formatted, fulfilled_at_formatted: current_crowdfunding_campaign_fulfilled_at_formatted
+              else
+                echo 'crowdfunding.campaign_dates.completed_unsuccessfully' | t: ended_at_formatted: current_crowdfunding_campaign_ended_at_formatted
+              endif
+          endcase
+        %}
+      </p>
+    {% endif %}
+
+    {% if block.settings.show_campaign_progress and current_crowdfunding_campaign %}
+      <p>
+        {% liquid
+          case current_crowdfunding_campaign.goal_type
+            when 'total_units'
+              case current_crowdfunding_campaign.status
+                when 'ended'
+                when 'completed'
+                  assign total_units_formatted = current_crowdfunding_campaign.campaign_end_total_units | plus: 0
+                else
+                  assign total_units_formatted = current_crowdfunding_campaign.campaign_running_total_units | plus: 0
+              endcase
+
+              assign goal_total_units_formatted = current_crowdfunding_campaign.goal_total_units | plus: 0
+
+              echo 'crowdfunding.campaign_progress.total_units' | t: total_units_formatted: total_units_formatted, goal_total_units_formatted: goal_total_units_formatted
+            when 'total_value'
+              case current_crowdfunding_campaign.status
+                when 'ended'
+                when 'completed'
+                  assign total_value_formatted = current_crowdfunding_campaign.campaign_end_total_value_cents | money_without_trailing_zeros
+                else
+                  assign total_value_formatted = current_crowdfunding_campaign.campaign_running_total_value_cents | money_without_trailing_zeros
+              endcase
+
+              assign goal_total_value_formatted = current_crowdfunding_campaign.goal_total_value_cents | money_without_trailing_zeros
+
+              echo 'crowdfunding.campaign_progress.total_value' | t: total_value_formatted: total_value_formatted, goal_total_value_formatted: goal_total_value_formatted
+          endcase
+        %}
+      </p>
+    {% endif %}
+  </crowdfunding-selector>
+{% endif %}
+
+{% schema %}
+{
+  "javascript": "theme-extension.js",
+  "name": "Crowdfunding selector",
+  "target": "section",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Crowdfunding purchase options"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_pending_campaigns",
+      "label": "Show pending campaigns",
+      "info": "Customers will see information about upcoming crowdfunding campaigns without being able to place orders for them.",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_ended_campaigns",
+      "label": "Show ended campaigns",
+      "info": "Customers will see information about recently ended crowdfunding campaigns that haven't yet been fulfilled without being able to place orders for them.",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_completed_campaigns",
+      "label": "Show completed campaigns",
+      "info": "Customers will see information about completed crowdfunding campaigns that have been fulfilled without being able to place orders for them.",
+      "default": true
+    },
+    {
+      "type": "header",
+      "content": "Crowdfunding milestones"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_campaign_dates",
+      "label": "Show campaign dates",
+      "info": "Customers will be shown dates relevant to the currently selected campaign.",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_campaign_progress",
+      "label": "Show campaign progress",
+      "info": "Customers will be shown information about the progress of the currently selected campaign.",
+      "default": true
+    }
+  ]
+}
+{% endschema %}

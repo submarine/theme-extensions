@@ -1,0 +1,11 @@
+{
+  "name": "theme-extension",
+  "version": "0.0.0",
+  "scripts": {
+    "build": "esbuild src/index.js --bundle --outfile=assets/theme-extension.js --minify",
+    "watch": "esbuild src/index.js --bundle --outfile=assets/theme-extension.js --watch"
+  },
+  "devDependencies": {
+    "esbuild": "^0.20.2"
+  }
+}

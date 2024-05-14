@@ -1,0 +1,39 @@
+{
+  "name": "theme-extensions",
+  "version": "0.0.0",
+  "license": "UNLICENSED",
+  "scripts": {
+    "shopify": "shopify",
+    "build": "shopify app build",
+    "dev": "shopify app dev",
+    "info": "shopify app info",
+    "generate": "shopify app generate",
+    "deploy": "shopify app deploy",
+    "lint": "eslint extensions/*/src -c .eslintrc --ext js,jsx"
+  },
+  "dependencies": {
+    "@shopify/app": "^3.58.2",
+    "@shopify/cli": "^3.59.3"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.24.4",
+    "@babel/eslint-parser": "^7.24.1",
+    "@babel/preset-react": "^7.24.1",
+    "esbuild": "0.20.2",
+    "eslint": "^8.57.0",
+    "eslint-config-airbnb": "^19.0.4",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-jsx-a11y": "^6.8.0",
+    "eslint-plugin-react": "^7.34.1",
+    "eslint-plugin-simple-import-sort": "^12.0.0"
+  },
+  "trustedDependencies": [
+    "@shopify/plugin-cloudflare"
+  ],
+  "author": "submarine",
+  "private": true,
+  "workspaces": [
+    "extensions/*"
+  ]
+}

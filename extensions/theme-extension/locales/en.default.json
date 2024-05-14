@@ -1,0 +1,60 @@
+{
+  "subscriptions": {
+    "selector": {
+      "title": "Subscription option",
+      "no_selling_plan": "One-time purchase",
+      "anchors_title": "Delivery option"
+    },
+    "pricing": {
+      "discount_title": "Subscribe and save when getting your order {{ frequency_readable }}.",
+      "discount_description_first_cycle_singular": "{{ discount_value }} off your first order",
+      "discount_description_first_cycle_plural": "{{ discount_value }} off your first {{ discount_cycle_delta }} orders",
+      "discount_description_subsequent_cycle_singular": "{{ discount_value }} off your next order",
+      "discount_description_subsequent_cycle_plural": "{{ discount_value }} off your next {{ discount_cycle_delta }} orders",
+      "discount_description_final": "{{ discount_value }} off after that"
+    }
+  },
+  "presales": {
+    "selector": {
+      "title": "Purchase option",
+      "no_selling_plan": "Buy now",
+      "ended_campaign": "Presale ended {{ ended_at_formatted }}"
+    },
+    "campaign_dates": {
+      "launched_with_fulfil_at": "This item is available on presale until {{ end_at_formatted }} and is expected to ship on {{ fulfil_at_formatted }}.",
+      "launched_without_fulfil_at": "This item is available on presale until {{ end_at_formatted }}.",
+      "pending_with_fulfil_at": "This item will be available for presale on {{ launch_at_formatted }} until {{ end_at_formatted }}, and is expected to ship on {{ fulfil_at_formatted }}.",
+      "pending_without_fulfil_at": "This item will be available for presale on {{ launch_at_formatted }} until {{ end_at_formatted }}.",
+      "ended_with_fulfil_at": "This item was on presale until {{ ended_at_formatted }} and is expected to ship on {{ fulfil_at_formatted }}.",
+      "ended_without_fulfil_at": "This item was on presale until {{ ended_at_formatted }}."
+    },
+    "campaign_progress": {
+      "reserved_only": "{{ total_campaign_reserved }} reserved",
+      "target_only": "{{ target }} available",
+      "reserved_and_target": "{{ total_campaign_reserved }} of {{ target }} reserved"
+    }
+  },
+  "crowdfunding": {
+    "selector": {
+      "title": "Funding option",
+      "no_selling_plan": "Back now",
+      "ended_campaign": "Crowdfunding ended {{ ended_at_formatted }}",
+      "completed_campaign": "Crowdfunding completed {{ completed_at_formatted }}"
+    },
+    "campaign_dates": {
+      "launched_with_fulfil_at": "This item is available to crowdfund until {{ end_at_formatted }}. If successful, it is expected to ship on {{ fulfil_at_formatted }}.",
+      "launched_without_fulfil_at": "This item is available to crowdfund until {{ end_at_formatted }}.",
+      "pending_with_fulfil_at": "This item will be available to crowdfund on {{ launch_at_formatted }} until {{ end_at_formatted }}. If successful, it is expected to ship on {{ fulfil_at_formatted }}.",
+      "pending_without_fulfil_at": "This item will be available to crowdfund on {{ launch_at_formatted }} until {{ end_at_formatted }}.",
+      "ended_successfully_with_fulfil_at": "This item will be available to crowdfund on {{ launch_at_formatted }} until {{ end_at_formatted }}. If successful, it is expected to ship on {{ fulfil_at_formatted }}.",
+      "ended_successfully_without_fulfil_at": "This item will be available to crowdfund on {{ launch_at_formatted }} until {{ end_at_formatted }}.",
+      "ended_unsuccessfully": "This item failed to reach its crowdfunding goal on {{ ended_at_formatted }}.",
+      "completed_successfully": "This item reached its crowdfunding goal on {{ ended_at_formatted }} and was shipped on {{ fulfilled_at_formatted }}.",
+      "completed_unsuccessfully": "This item failed to reach its crowdfunding goal on {{ ended_at_formatted }}."
+    },
+    "campaign_progress": {
+      "total_units": "{{ total_units_formatted }} of target {{ goal_total_units_formatted }} units sold.",
+      "total_value": "{{ total_value_formatted }} of {{ goal_total_value_formatted }} target raised."
+    }
+  }
+}

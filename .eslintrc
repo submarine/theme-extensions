@@ -1,0 +1,44 @@
+{
+  "env": {
+    "browser": true,
+    "es2022": true
+  },
+  "extends": ["airbnb", "prettier"],
+  "ignorePatterns": ["node_modules/"],
+  "parser": "@babel/eslint-parser",
+  "parserOptions": {
+    "ecmaFeatures": {
+      "jsx": true
+    },
+    "sourceType": "module"
+  },
+  "plugins": ["simple-import-sort", "import"],
+  "root": true,
+  "rules": {
+    "jsx-a11y/anchor-is-valid": "off",
+    "no-console": ["error", { "allow": ["warn", "error"] }],
+    "no-param-reassign": "off",
+    "no-underscore-dangle": "off",
+    "import/extensions": "off",
+    "import/first": "error",
+    "import/newline-after-import": "error",
+    "import/no-duplicates": "error",
+    "react/function-component-definition": [2, { "namedComponents": "arrow-function" }],
+    "react/jsx-props-no-spreading": "off",
+    "simple-import-sort/exports": "error",
+    "simple-import-sort/imports": [
+      "error",
+      {
+        "groups": [
+          // See https://dev.to/julioxavierr/sorting-your-imports-with-eslint-3ped.
+          ["^react", "^@?\\w"],
+          ["^(@|components)(/.*|$)"],
+          ["^\\u0000"],
+          ["^\\.\\.(?!/?$)", "^\\.\\./?$"],
+          ["^\\./(?=.*/)(?!/?$)", "^\\.(?!/?$)", "^\\./?$"],
+          ["^.+\\.?(css)$"]
+        ]
+      }
+    ]
+  }
+}

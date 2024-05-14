@@ -1,0 +1,260 @@
+{% liquid
+
+  # presale_selector.liquid
+  #
+  # A theme app extension for Shopify stores using Submarine (https://getsubmarine.com).
+  # Designed to be used on the product page to display detailed presale campaign information to
+  # customers and allow them to select a presale option.
+
+  assign current_variant = product.selected_or_first_available_variant
+  assign current_selling_plan = current_variant.selected_selling_plan_allocation.selling_plan
+  assign default_product_form_id = 'product-form-' | append: section.id
+
+  assign available_presale_campaigns = '' | split: ','
+  assign current_presale_campaign = nil
+
+  # Iterate through all presale campaigns linked to the currently selected variant to extract both
+  # a list of all presale campaigns available for display or selection, as well as details of the
+  # currently selected presale campaign, if any.
+  for presale_campaign in product.metafields.submarine.presales.value
+    assign presale_campaign_selling_plan_id = presale_campaign.selling_plan_gid | remove: 'gid://shopify/SellingPlan/' | plus: 0
+
+    for variant_presale_campaign in current_variant.metafields.submarine.presales.value
+      assign variant_presale_campaign_id = variant_presale_campaign.first.first
+
+      if presale_campaign.id == variant_presale_campaign_id
+        # Check if this is the currently selected presale campaign, and store it if so.
+        if current_selling_plan and current_selling_plan.id == presale_campaign_selling_plan_id
+          assign current_presale_campaign = presale_campaign
+        endif
+
+        # Check if this presale campaign should be available for display or selection.
+        if presale_campaign.status == 'launched'
+          assign presale_campaign_is_launched = true
+        endif
+
+        if presale_campaign.status == 'pending' and block.settings.show_pending_campaigns
+          assign presale_campaign_is_pending_and_available = true
+        endif
+
+        if presale_campaign.status == 'ended' and block.settings.show_ended_campaigns
+          assign presale_campaign_is_ended_and_available = true
+        endif
+
+        if presale_campaign_is_launched or presale_campaign_is_pending_and_available or presale_campaign_is_ended_and_available
+          assign presale_campaign_as_array = presale_campaign | sort
+          assign available_presale_campaigns = available_presale_campaigns | concat: presale_campaign_as_array
+        endif
+
+        break
+      endif
+    endfor
+  endfor
+
+  assign available_presale_campaigns = available_presale_campaigns | sort: 'end_at'
+  assign available_presale_campaigns_count = available_presale_campaigns | size
+
+  if current_variant.requires_selling_plan and current_presale_campaign == nil
+    assign current_presale_campaign = available_presale_campaigns | first
+  endif
+
+  assign current_presale_campaign_launch_at_formatted = current_presale_campaign.launch_at | date: '%B %e, %Y'
+  assign current_presale_campaign_end_at_formatted = current_presale_campaign.end_at | date: '%B %e, %Y'
+  assign current_presale_campaign_ended_at_formatted = current_presale_campaign.ended_at | date: '%B %e, %Y'
+  assign current_presale_campaign_fulfil_at_formatted = current_presale_campaign.fulfil_at | date: '%B %e, %Y'
+
+%}
+
+{% if available_presale_campaigns_count %}
+  <presale-selector
+    data-section-id="{{ section.id }}"
+    data-product-variant-id="{{ current_variant.id }}"
+    data-selling-plan-id="{{ current_selling_plan.id }}"
+    data-default-product-form-id="{{ default_product_form_id }}"
+    {{ block.shopify_attributes }}
+  >
+    {% if current_variant.requires_selling_plan and available_presale_campaigns_count == 1 %}
+      <input
+        type="hidden"
+        name="selling_plan"
+        value="{{ available_presale_campaigns.first.selling_plan_gid | remove: 'gid://shopify/SellingPlan/' }}"
+        form="{{ default_product_form_id }}"
+      />
+    {% else %}
+      <fieldset class="product-form__input product-form__input--pill">
+        <legend class="form__label">
+          {{ 'presales.selector.title' | t }}
+        </legend>
+
+        {% unless current_variant.requires_selling_plan %}
+          <div>
+            <input
+              id="{{ block.id }}-selling-plan-none"
+              type="radio"
+              name="selling_plan"
+              value=""
+              {% unless current_selling_plan %}checked{% endunless %}
+              form="{{ default_product_form_id }}"
+            />
+            <label
+              for="{{ block.id }}-selling-plan-none"
+            >
+              {{ 'presales.selector.no_selling_plan' | t }}
+            </label>
+          </div>
+        {% endunless %}
+
+        {% for presale_campaign in available_presale_campaigns %}
+          {% assign presale_campaign_selling_plan_id = presale_campaign.selling_plan_gid | remove: 'gid://shopify/SellingPlan/' | plus: 0 %}
+          {% assign presale_campaign_selling_plan_active = false %}
+
+          {% for selling_plan_allocation in current_variant.selling_plan_allocations %}
+            {% assign selling_plan = selling_plan_allocation.selling_plan %}
+            {% if selling_plan.id == presale_campaign_selling_plan_id %}
+              <div>
+                <input
+                  id="{{ block.id }}-selling-plan-{{ presale_campaign.id }}"
+                  type="radio"
+                  name="selling_plan"
+                  value="{{ selling_plan.id }}"
+                  {% if current_selling_plan.id == selling_plan.id %}checked{% endif %}
+                  form="{{ default_product_form_id }}"
+                />
+                <label
+                  for="{{ block.id }}-selling-plan-{{ presale_campaign.id }}"
+                >
+                  {{ selling_plan.name }}
+                </label>
+              </div>
+              {% assign presale_campaign_selling_plan_active = true %}
+              {% break %}
+            {% endif %}
+          {% endfor %}
+
+          {% unless presale_campaign_selling_plan_active %}
+            <input
+              id="{{ block.id }}-selling-plan-{{ presale_campaign.id }}"
+              type="radio"
+              name="selling_plan"
+              value=""
+              disabled
+              form="{{ default_product_form_id }}"
+            />
+            <label
+              for="{{ block.id }}-selling-plan-{{ presale_campaign.id }}"
+            >
+              {% assign presale_campaign_ended_at_formatted = presale_campaign.ended_at | date: '%B %e, %Y'  %}
+              {{ 'presales.selector.ended_campaign' | t: ended_at_formatted: presale_campaign_ended_at_formatted }}
+            </label>
+          {% endunless %}
+        {% endfor %}
+      </fieldset>
+    {% endif %}
+
+    {% if block.settings.show_campaign_dates and current_presale_campaign %}
+      <p>
+        {% liquid
+          case current_presale_campaign.status
+            when 'launched'
+              if current_presale_campaign.fulfil_at
+                echo 'presales.campaign_dates.launched_with_fulfil_at' | t: end_at_formatted: current_presale_campaign_end_at_formatted, fulfil_at_formatted: current_presale_campaign_fulfil_at_formatted
+              else
+                echo 'presales.campaign_dates.launched_without_fulfil_at' | t: end_at_formatted: current_presale_campaign_end_at_formatted
+              endif
+            when 'pending'
+              if current_presale_campaign.fulfil_at
+                echo 'presales.campaign_dates.pending_with_fulfil_at' | t: launch_at_formatted: current_presale_campaign_launch_at_formatted, end_at_formatted: current_presale_campaign_end_at_formatted, fulfil_at_formatted: current_presale_campaign_fulfil_at_formatted
+              else
+                echo 'presales.campaign_dates.pending_without_fulfil_at' | t: launch_at_formatted: current_presale_campaign_launch_at_formatted, end_at_formatted: current_presale_campaign_end_at_formatted
+              endif
+            when 'ended'
+              if current_presale_campaign.fulfil_at
+                echo 'presales.campaign_dates.ended_with_fulfil_at' | t: ended_at_formatted: current_presale_campaign_ended_at_formatted, fulfil_at_formatted: current_presale_campaign_fulfil_at_formatted
+              else
+                echo 'presales.campaign_dates.ended_without_fulfil_at' | t: ended_at_formatted: current_presale_campaign_ended_at_formatted
+              endif
+          endcase
+        %}
+      </p>
+    {% endif %}
+
+    {% if block.settings.display_campaign_progress != 'none' and current_presale_campaign %}
+      <p>
+        {% liquid
+          case block.settings.display_campaign_progress
+            when 'reserved_only'
+              echo 'presales.campaign_progress.reserved_only' | t: total_campaign_reserved: current_presale_campaign.total_campaign_reserved
+            when 'target_only'
+              echo 'presales.campaign_progress.target_only' | t: target: current_presale_campaign.limit
+            when 'reserved_and_target'
+              echo 'presales.campaign_progress.reserved_and_target' | t: total_campaign_reserved: current_presale_campaign.total_campaign_reserved, target: current_presale_campaign.limit
+          endcase
+        %}
+      </p>
+    {% endif %}
+  </presale-selector>
+{% endif %}
+
+{% schema %}
+{
+  "javascript": "theme-extension.js",
+  "name": "Presale selector",
+  "target": "section",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Presale purchase options"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_pending_campaigns",
+      "label": "Show pending campaigns",
+      "info": "Customers will see information about upcoming presale campaigns without being able to place orders for them.",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_ended_campaigns",
+      "label": "Show ended campaigns",
+      "info": "Customers will see information about recently ended presale campaigns without being able to place orders for them.",
+      "default": true
+    },
+    {
+      "type": "header",
+      "content": "Presale milestones"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_campaign_dates",
+      "label": "Show campaign dates",
+      "info": "Customers will be shown dates relevant to the currently selected campaign.",
+      "default": true
+    },
+    {
+      "type": "select",
+      "id": "display_campaign_progress",
+      "label": "Display campaign progress",
+      "info": "Customers will be presented with the chosen information about the progress of the currently selected campaign.",
+      "options": [
+        {
+          "label": "None",
+          "value": "none"
+        },
+        {
+          "label": "Reserved units only",
+          "value": "reserved_only"
+        },
+        {
+          "label": "Target units only",
+          "value": "target_only"
+        },
+        {
+          "label": "Both reserved and target units",
+          "value": "reserved_and_target"
+        }
+      ],
+      "default": "none"
+    }
+  ]
+}
+{% endschema %}

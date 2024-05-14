@@ -1,0 +1,196 @@
+{% liquid
+
+  # subscription_selector.liquid
+  #
+  # A theme app extension for Shopify stores using Submarine (https://getsubmarine.com).
+  # Designed to be used on the product page to display detailed subscription plan information to
+  # customers and allow them to select a subscription option.
+
+  assign current_variant = product.selected_or_first_available_variant
+  assign current_selling_plan = current_variant.selected_selling_plan_allocation.selling_plan
+  assign default_product_form_id = 'product-form-' | append: section.id
+
+  assign available_subscription_plans = current_variant.metafields.submarine.subscription_plans.value
+  assign current_subscription_plan = nil
+  assign current_subscription_plan_anchor = nil
+
+  # Iterate through all subscription plans and corresponding anchors linked to the currently
+  # selected variant to identify the currently selected plan and anchor, if any.
+  for subscription_plan in available_subscription_plans
+    for subscription_plan_anchor in subscription_plan.anchors.value
+      assign subscription_plan_anchor_selling_plan_id = subscription_plan_anchor.selling_plan_id | plus: 0
+
+      if current_selling_plan and current_selling_plan.id == subscription_plan_anchor_selling_plan_id
+        assign current_subscription_plan = subscription_plan
+        assign current_subscription_plan_anchor = subscription_plan_anchor
+      endif
+    endfor
+  endfor
+
+  if current_variant.requires_selling_plan and current_subscription_plan == nil
+    assign current_subscription_plan = available_subscription_plans | first
+    assign current_subscription_plan_anchor = current_subscription_plan.anchors.value | first
+  endif
+
+  assign available_subscription_plan_anchors = current_subscription_plan.anchors.value
+
+  assign available_subscription_plans_count = available_subscription_plans.count
+  assign available_subscription_plan_anchors_count = available_subscription_plan_anchors | size
+
+%}
+
+{% if available_subscription_plans_count and available_subscription_plan_anchors_count %}
+  <subscription-selector
+    data-section-id="{{ section.id }}"
+    data-product-variant-id="{{ current_variant.id }}"
+    data-selling-plan-id="{{ current_selling_plan.id }}"
+    data-default-product-form-id="{{ default_product_form_id }}"
+    {{ block.shopify_attributes }}
+  >
+    {% if current_variant.requires_selling_plan and available_subscription_plans_count == 1 and available_subscription_plan_anchors_count == 1 %}
+      <input
+        type="hidden"
+        name="selling_plan"
+        value="{{ available_subscription_plan_anchors.first.selling_plan_id }}"
+        form="{{ default_product_form_id }}"
+      />
+    {% else %}
+      <fieldset class="product-form__input product-form__input--pill">
+        <legend class="form__label">
+          {{ 'subscriptions.selector.title' | t }}
+        </legend>
+
+        {% unless current_variant.requires_selling_plan %}
+          <div>
+            <input
+              id="{{ block.id }}-selling-plan-none"
+              type="radio"
+              name="selling_plan"
+              value=""
+              {% unless current_selling_plan %}checked{% endunless %}
+              form="{{ default_product_form_id }}"
+            />
+            <label
+              for="{{ block.id }}-selling-plan-none"
+            >
+              {{ 'subscriptions.selector.no_selling_plan' | t }}
+            </label>
+          </div>
+        {% endunless %}
+
+        {% for subscription_plan in available_subscription_plans %}
+          <div>
+            <input
+              id="{{ block.id }}-selling-plan-{{ subscription_plan.gid }}"
+              type="radio"
+              name="selling_plan"
+              value="{{ subscription_plan.anchors.value.first.selling_plan_id }}"
+              {% if current_subscription_plan.gid == subscription_plan.gid %}checked{% endif %}
+              form="{{ default_product_form_id }}"
+            />
+            <label
+              for="{{ block.id }}-selling-plan-{{ subscription_plan.gid }}"
+            >
+              {{ subscription_plan.subscription_plan_name }}
+            </label>
+          </div>
+        {% endfor %}
+      </fieldset>
+    {% endif %}
+
+    {% if available_subscription_plan_anchors_count > 1 %}
+      <fieldset class="product-form__input product-form__input--pill">
+        <legend class="form__label">
+          {{ 'subscriptions.selector.anchors_title' | t }}
+        </legend>
+
+        {% for subscription_plan_anchor in available_subscription_plan_anchors %}
+          <div>
+            <input
+              id="{{ block.id }}-selling-plan-{{ current_subscription_plan.gid }}-{{ subscription_plan_anchor.id }}"
+              type="radio"
+              name="selling_plan"
+              value="{{ subscription_plan_anchor.selling_plan_id }}"
+              {% if current_subscription_plan_anchor.id == subscription_plan_anchor.id %}checked{% endif %}
+              form="{{ default_product_form_id }}"
+            />
+            <label
+              for="{{ block.id }}-selling-plan-{{ current_subscription_plan.gid }}-{{ subscription_plan_anchor.id }}"
+            >
+              {{ subscription_plan_anchor.name }}
+            </label>
+          </div>
+        {% endfor %}
+      </fieldset>
+    {% endif %}
+
+    {% if block.settings.show_plan_pricing and current_subscription_plan %}
+      {% assign subscription_plan_pricing_behaviour = current_subscription_plan.pricing_behaviour.value %}
+      {% assign subscription_plan_discounts = subscription_plan_pricing_behaviour.discounts %}
+      {% assign subscription_plan_discounts_count = subscription_plan_discounts | size %}
+
+      {% if subscription_plan_discounts_count %}
+        <p>
+          {{ 'subscriptions.pricing.discount_title' | t: frequency_readable: current_subscription_plan.frequency_readable }}
+          <ul>
+            {% liquid
+              for subscription_plan_discount in subscription_plan_discounts
+                assign next_subscription_plan_discount_index = forloop.index0 | plus: 1
+                assign next_subscription_plan_discount = subscription_plan_discounts[next_subscription_plan_discount_index]
+
+                if subscription_plan_discount.value.type == 'fixed_amount'
+                  assign subscription_plan_discount_value = '$' | append: subscription_plan_discount.value.fixed_amount
+                else
+                  assign subscription_plan_discount_value = subscription_plan_discount.value.percentage | append: '%'
+                endif
+
+                echo '<li>'
+                if next_subscription_plan_discount
+                  assign subscription_plan_discount_cycle_delta = next_subscription_plan_discount.after_cycle | minus: subscription_plan_discount.after_cycle
+                  if subscription_plan_discount_cycle_delta == 1
+                    if forloop.first
+                      echo 'subscriptions.pricing.discount_description_first_cycle_singular' | t: discount_value: subscription_plan_discount_value
+                    else
+                      echo 'subscriptions.pricing.discount_description_subsequent_cycle_singular' | t: discount_value: subscription_plan_discount_value
+                    endif
+                  else
+                    if forloop.first
+                      echo 'subscriptions.pricing.discount_description_first_cycle_plural' | t: discount_value: subscription_plan_discount_value, discount_cycle_delta: subscription_plan_discount_cycle_delta
+                    else
+                      echo 'subscriptions.pricing.discount_description_subsequent_cycle_plural' | t: discount_value: subscription_plan_discount_value, discount_cycle_delta: subscription_plan_discount_cycle_delta
+                    endif
+                  endif
+                else
+                  echo 'subscriptions.pricing.discount_description_final' | t: discount_value: subscription_plan_discount_value
+                endif
+                echo '</li>'
+              endfor
+            %}
+          </ul>
+        </p>
+      {% endif %}
+    {% endif %}
+  </subscription-selector>
+{% endif %}
+
+{% schema %}
+{
+  "javascript": "theme-extension.js",
+  "name": "Subscription selector",
+  "target": "section",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Subscription plan details"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_plan_pricing",
+      "label": "Show plan pricing",
+      "info": "Customers will be shown pricing details for the selected subscription plan, if any discount is available.",
+      "default": true
+    }
+  ]
+}
+{% endschema %}
+
