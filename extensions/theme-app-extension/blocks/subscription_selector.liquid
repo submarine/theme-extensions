@@ -42,6 +42,7 @@
 {% if available_subscription_plans_count and available_subscription_plan_anchors_count %}
   <subscription-selector
     data-section-id="{{ section.id }}"
+    data-product-id="{{ product.id }}"
     data-product-variant-id="{{ current_variant.id }}"
     data-selling-plan-id="{{ current_selling_plan.id }}"
     data-default-product-form-id="{{ default_product_form_id }}"

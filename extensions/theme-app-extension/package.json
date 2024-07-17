@@ -1,0 +1,11 @@
+{
+  "name": "theme-app-extension",
+  "version": "0.4.0",
+  "scripts": {
+    "build": "node_modules/.bin/esbuild src/index.js --bundle --outfile=assets/theme-extension.js --minify",
+    "watch": "node_modules/.bin/esbuild src/index.js --bundle --outfile=assets/theme-extension.js --watch"
+  },
+  "devDependencies": {
+    "esbuild": "^0.20.2"
+  }
+}

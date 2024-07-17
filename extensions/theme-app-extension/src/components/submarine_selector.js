@@ -16,13 +16,13 @@ const variantChangeSubscriptionSupported = () =>
 
 // Define an alternative variant change subscription method that detects changes in the `variant`
 // query parameter in the product page URL for when the `subscribe` method is not available.
-const subscribeFallback = () => {
+const subscribeFallback = (selector) => {
   const handleDocumentChange = () => {
     const currentUrl  = new URL(document.URL);
     const urlVariant = currentUrl.searchParams.get("variant");
 
-    if(!!urlVariant && urlVariant !== this.productVariantId) {
-      this.handleVariantChange(this.sectionId, {
+    if(!!urlVariant && urlVariant !== selector.productVariantId) {
+      selector.handleVariantChange(selector.sectionId, {
         id: urlVariant
       });
     }
@@ -38,13 +38,16 @@ const subscribeFallback = () => {
 // Attempt to determine the `id` attribute value of the product form related to a Submarine
 // selector component. Achieves this by looking for `<form>` elements with known ID patterns,
 // starting with the default product form ID pattern used by themes based on Shopify's Dawn.
-const getValidProductFormId = (defaultProductFormId, sectionId) => [
+const getValidProductFormId = (defaultProductFormId, sectionId, productId) => [
 
     // the default form id pattern used by Dawn-based themes
     defaultProductFormId,
 
     // an alternate form id pattern used by Switch themes
-    `ProductForm-${sectionId}`
+    `ProductForm-${sectionId}`,
+
+    // an alternate form id pattern used by Archetype themes
+    `AddToCartForm-${productId}`
 
   ].find(productFormId => !!document.getElementById(productFormId));
 
@@ -55,6 +58,7 @@ export default class SubmarineSelector extends HTMLElement {
 
     // set initial internal attributes from data- attributes on the component
     this.sectionId = this.dataset.sectionId;
+    this.productId = this.dataset.productId;
     this.productVariantId = this.dataset.productVariantId;
     this.sellingPlanId = this.dataset.sellingPlanId;
     this.defaultProductFormId = this.dataset.defaultProductFormId;
@@ -94,9 +98,7 @@ export default class SubmarineSelector extends HTMLElement {
         this.handleVariantChange(event.data.sectionId, event.data.variant);
       });
     } else {
-      this.variantChangeUnsubscriber = subscribeFallback((sectionId, variantId) => {
-        this.handleVariantChange(sectionId, { id: variantId });
-      });
+      this.variantChangeUnsubscriber = subscribeFallback(this);
     }
   }
 
@@ -152,7 +154,7 @@ export default class SubmarineSelector extends HTMLElement {
   }
 
   updateProductFormId() {
-    const validProductFormId = getValidProductFormId(this.defaultProductFormId, this.sectionId);
+    const validProductFormId = getValidProductFormId(this.defaultProductFormId, this.sectionId, this.productId);
 
     // if the default product form id is valid, we don't need to do anything
     if(validProductFormId === this.defaultProductFormId) {
@@ -161,7 +163,11 @@ export default class SubmarineSelector extends HTMLElement {
 
     // otherwise, update any form attribute references on inputs inside the component
     this.querySelectorAll(`input[form="${this.defaultProductFormId}"]`).forEach(input => {
-      input.setAttribute('form', validProductFormId);
+      if(validProductFormId === undefined) {
+        input.removeAttribute('form');
+      } else {
+        input.setAttribute('form', validProductFormId);
+      }
     });
   }
 }
