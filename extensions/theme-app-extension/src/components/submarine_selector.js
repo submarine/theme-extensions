@@ -47,7 +47,13 @@ const getValidProductFormId = (defaultProductFormId, sectionId, productId) => [
     `ProductForm-${sectionId}`,
 
     // an alternate form id pattern used by Archetype themes
-    `AddToCartForm-${productId}`
+    `AddToCartForm-${productId}`,
+
+    // an alternate form id pattern used by Invisible themes
+    `ProductForm--${sectionId}-${productId}`,
+
+    // an alternate form id pattern used by Fluorescent themes
+    `product_form_${productId}`
 
   ].find(productFormId => !!document.getElementById(productFormId));
 

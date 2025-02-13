@@ -37,6 +37,32 @@
   assign available_subscription_plans_count = available_subscription_plans.count
   assign available_subscription_plan_anchors_count = available_subscription_plan_anchors | size
 
+  # Define default (empty) CSS classes
+  assign fieldset_classes = ''
+  assign fieldset_title_classes = ''
+  assign fieldset_content_classes = ''
+  assign field_classes = ''
+  assign input_classes = ''
+  assign label_classes = ''
+
+  # Override CSS classes based on the theme preset
+  case block.settings.theme_preset
+    when 'broadcast'
+      assign fieldset_classes = 'radio__fieldset'
+      assign fieldset_title_classes = 'radio__legend radio__legend__label radio__legend__label--text radio__legend__option-name'
+      assign fieldset_content_classes = 'radio__buttons'
+      assign field_classes = 'radio__button'
+      assign input_classes = ''
+      assign label_classes = ''
+    when 'dawn'
+      assign fieldset_classes = 'product-form__input product-form__input--pill'
+      assign fieldset_title_classes = 'form__label'
+      assign fieldset_content_classes = ''
+      assign field_classes = ''
+      assign input_classes = ''
+      assign label_classes = ''
+  endcase
+
 %}
 
 {% if available_subscription_plans_count and available_subscription_plan_anchors_count %}
@@ -56,72 +82,82 @@
         form="{{ default_product_form_id }}"
       />
     {% else %}
-      <fieldset class="product-form__input product-form__input--pill">
-        <legend class="form__label">
+      <fieldset class="{{ fieldset_classes }}">
+        <legend class="{{ fieldset_title_classes }}">
           {{ 'subscriptions.selector.title' | t }}
         </legend>
 
-        {% unless current_variant.requires_selling_plan %}
-          <div>
-            <input
-              id="{{ block.id }}-selling-plan-none"
-              type="radio"
-              name="selling_plan"
-              value=""
-              {% unless current_selling_plan %}checked{% endunless %}
-              form="{{ default_product_form_id }}"
-            />
-            <label
-              for="{{ block.id }}-selling-plan-none"
-            >
-              {{ 'subscriptions.selector.no_selling_plan' | t }}
-            </label>
-          </div>
-        {% endunless %}
+        <div class="{{ fieldset_content_classes }}">
+          {% unless current_variant.requires_selling_plan %}
+            <div class="{{ field_classes }}">
+              <input
+                id="{{ block.id }}-selling-plan-none"
+                type="radio"
+                name="selling_plan"
+                value=""
+                {% unless current_selling_plan %}checked{% endunless %}
+                form="{{ default_product_form_id }}"
+                class="{{ input_classes }}"
+              />
+              <label
+                for="{{ block.id }}-selling-plan-none"
+                class="{{ label_classes }}"
+              >
+                {{ 'subscriptions.selector.no_selling_plan' | t }}
+              </label>
+            </div>
+          {% endunless %}
 
-        {% for subscription_plan in available_subscription_plans %}
-          <div>
-            <input
-              id="{{ block.id }}-selling-plan-{{ subscription_plan.gid }}"
-              type="radio"
-              name="selling_plan"
-              value="{{ subscription_plan.anchors.value.first.selling_plan_id }}"
-              {% if current_subscription_plan.gid == subscription_plan.gid %}checked{% endif %}
-              form="{{ default_product_form_id }}"
-            />
-            <label
-              for="{{ block.id }}-selling-plan-{{ subscription_plan.gid }}"
-            >
-              {{ subscription_plan.subscription_plan_name }}
-            </label>
-          </div>
-        {% endfor %}
+          {% for subscription_plan in available_subscription_plans %}
+            <div class="{{ field_classes }}">
+              <input
+                id="{{ block.id }}-selling-plan-{{ subscription_plan.gid }}"
+                type="radio"
+                name="selling_plan"
+                value="{{ subscription_plan.anchors.value.first.selling_plan_id }}"
+                {% if current_subscription_plan.gid == subscription_plan.gid %}checked{% endif %}
+                form="{{ default_product_form_id }}"
+                class="{{ input_classes }}"
+              />
+              <label
+                for="{{ block.id }}-selling-plan-{{ subscription_plan.gid }}"
+                class="{{ label_classes }}"
+              >
+                {{ subscription_plan.subscription_plan_name }}
+              </label>
+            </div>
+          {% endfor %}
+        </div>
       </fieldset>
     {% endif %}
 
     {% if available_subscription_plan_anchors_count > 1 %}
-      <fieldset class="product-form__input product-form__input--pill">
-        <legend class="form__label">
+      <fieldset class="{{ fieldset_classes }}">
+        <legend class="{{ fieldset_title_classes }}">
           {{ 'subscriptions.selector.anchors_title' | t }}
         </legend>
 
-        {% for subscription_plan_anchor in available_subscription_plan_anchors %}
-          <div>
-            <input
-              id="{{ block.id }}-selling-plan-{{ current_subscription_plan.gid }}-{{ subscription_plan_anchor.id }}"
-              type="radio"
-              name="selling_plan"
-              value="{{ subscription_plan_anchor.selling_plan_id }}"
-              {% if current_subscription_plan_anchor.id == subscription_plan_anchor.id %}checked{% endif %}
-              form="{{ default_product_form_id }}"
-            />
-            <label
-              for="{{ block.id }}-selling-plan-{{ current_subscription_plan.gid }}-{{ subscription_plan_anchor.id }}"
-            >
-              {{ subscription_plan_anchor.name }}
-            </label>
-          </div>
-        {% endfor %}
+        <div class="{{ fieldset_content_classes }}">
+          {% for subscription_plan_anchor in available_subscription_plan_anchors %}
+            <div class="{{ field_classes }}">
+              <input
+                id="{{ block.id }}-selling-plan-{{ current_subscription_plan.gid }}-{{ subscription_plan_anchor.id }}"
+                type="radio"
+                name="selling_plan"
+                value="{{ subscription_plan_anchor.selling_plan_id }}"
+                {% if current_subscription_plan_anchor.id == subscription_plan_anchor.id %}checked{% endif %}
+                form="{{ default_product_form_id }}"
+                class="{{ input_classes }}"
+              />
+              <label
+                for="{{ block.id }}-selling-plan-{{ current_subscription_plan.gid }}-{{ subscription_plan_anchor.id }}"
+                class="{{ label_classes }}"
+              >
+                {{ subscription_plan_anchor.name }}
+              </label>
+            </div>
+          {% endfor %}
+        </div>
       </fieldset>
     {% endif %}
 
@@ -147,7 +183,7 @@
 
                 echo '<li>'
                 if next_subscription_plan_discount
-                  assign subscription_plan_discount_cycle_delta = next_subscription_plan_discount.after_cycle | minus: subscription_plan_discount.after_cycle
+                  assign subscription_plan_discount_cycle_delta = next_subscription_plan_discount.from_cycle | minus: subscription_plan_discount.from_cycle
                   if subscription_plan_discount_cycle_delta == 1
                     if forloop.first
                       echo 'subscriptions.pricing.discount_description_first_cycle_singular' | t: discount_value: subscription_plan_discount_value
@@ -190,6 +226,30 @@
       "label": "Show plan pricing",
       "info": "Customers will be shown pricing details for the selected subscription plan, if any discount is available.",
       "default": true
+    },
+    {
+      "type": "header",
+      "content": "Subscription plan details"
+    },
+    {
+      "id": "theme_preset",
+      "type": "select",
+      "label": "Theme preset",
+      "options": [
+        {
+          "label": "None",
+          "value": "none"
+        },
+        {
+          "label": "Dawn",
+          "value": "dawn"
+        },
+        {
+          "label": "Broadcast",
+          "value": "broadcast"
+        }
+      ],
+      "default": "dawn"
     }
   ]
 }

@@ -10,6 +10,10 @@
   assign current_selling_plan = current_variant.selected_selling_plan_allocation.selling_plan
   assign default_product_form_id = 'product-form-' | append: section.id
 
+  if current_variant.requires_selling_plan and current_selling_plan == nil
+    assign current_selling_plan = current_variant.selling_plan_allocations.first.selling_plan
+  endif
+
   assign available_crowdfunding_campaigns = '' | split: ','
   assign current_crowdfunding_campaign = nil
 
@@ -21,6 +25,11 @@
 
     for variant_crowdfunding_campaign in current_variant.metafields.submarine.crowdfunds.value
       assign variant_crowdfunding_campaign_id = variant_crowdfunding_campaign.first.first
+
+      # Set / reset flags that drive whether this crowdfunding campaign will be visible
+      assign crowdfunding_campaign_is_launched = false
+      assign crowdfunding_campaign_is_pending_and_available = false
+      assign crowdfunding_campaign_is_ended_and_available = false
 
       if crowdfunding_campaign.id == variant_crowdfunding_campaign_id
         # Check if this is the currently selected crowdfunding campaign, and store it if so.
@@ -164,6 +173,12 @@
       </fieldset>
     {% endif %}
 
+    {% if block.settings.show_campaign_description and current_selling_plan and current_selling_plan.description %}
+      <p>
+        {{ current_selling_plan.description }}
+      </p>
+    {% endif %}
+
     {% if block.settings.show_campaign_dates and current_crowdfunding_campaign %}
       <p>
         {% liquid
@@ -270,6 +285,13 @@
     {
       "type": "header",
       "content": "Crowdfunding milestones"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_campaign_description",
+      "label": "Show campaign description",
+      "info": "Customers will be shown the description of the currently selected campaign.",
+      "default": false
     },
     {
       "type": "checkbox",

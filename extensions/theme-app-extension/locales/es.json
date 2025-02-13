@@ -1,0 +1,60 @@
+{
+  "subscriptions": {
+    "selector": {
+      "title": "Opción de suscripción",
+      "no_selling_plan": "Compra única",
+      "anchors_title": "Opción de entrega"
+    },
+    "pricing": {
+      "discount_title": "Suscríbete y ahorra al recibir tu pedido {{ frequency_readable }}.",
+      "discount_description_first_cycle_singular": "{{ discount_value }} de descuento en tu primer pedido",
+      "discount_description_first_cycle_plural": "{{ discount_value }} de descuento en tus primeros {{ discount_cycle_delta }} pedidos",
+      "discount_description_subsequent_cycle_singular": "{{ discount_value }} de descuento en tu próximo pedido",
+      "discount_description_subsequent_cycle_plural": "{{ discount_value }} de descuento en tus próximos {{ discount_cycle_delta }} pedidos",
+      "discount_description_final": "{{ discount_value }} de descuento después de eso"
+    }
+  },
+  "presales": {
+    "selector": {
+      "title": "Opciones de compra",
+      "no_selling_plan": "Comprar ahora",
+      "ended_campaign": "La preventa finalizó el {{ ended_at_formatted }}"
+    },
+    "campaign_dates": {
+      "launched_with_fulfil_at": "Este artículo está disponible en preventa hasta {{ end_at_formatted }} y se espera que se envíe el {{ fulfil_at_formatted }}.",
+      "launched_without_fulfil_at": "Este artículo está disponible en preventa hasta {{ end_at_formatted }}.",
+      "pending_with_fulfil_at": "Este artículo estará disponible para preventa desde {{ launch_at_formatted }} hasta {{ end_at_formatted }}, y se espera que se envíe el {{ fulfil_at_formatted }}.",
+      "pending_without_fulfil_at": "Este artículo estará disponible para preventa desde {{ launch_at_formatted }} hasta {{ end_at_formatted }}.",
+      "ended_with_fulfil_at": "Este artículo estuvo en preventa hasta {{ ended_at_formatted }} y se espera que se envíe el {{ fulfil_at_formatted }}.",
+      "ended_without_fulfil_at": "Este artículo estuvo en preventa hasta {{ ended_at_formatted }}."
+    },
+    "campaign_progress": {
+      "reserved_only": "{{ total_campaign_reserved }} reservados",
+      "target_only": "{{ target }} disponibles",
+      "reserved_and_target": "{{ total_campaign_reserved }} de {{ target }} reservados"
+    }
+  },
+  "crowdfunding": {
+    "selector": {
+      "title": "Opción de financiamiento",
+      "no_selling_plan": "Apoyar ahora",
+      "ended_campaign": "El crowdfunding finalizó el {{ ended_at_formatted }}",
+      "completed_campaign": "El crowdfunding se completó el {{ completed_at_formatted }}"
+    },
+    "campaign_dates": {
+      "launched_with_fulfil_at": "Este artículo está disponible para financiar hasta {{ end_at_formatted }}. Si tiene éxito, se espera que se envíe el {{ fulfil_at_formatted }}.",
+      "launched_without_fulfil_at": "Este artículo está disponible para financiar hasta {{ end_at_formatted }}.",
+      "pending_with_fulfil_at": "Este artículo estará disponible para financiar desde {{ launch_at_formatted }} hasta {{ end_at_formatted }}. Si tiene éxito, se espera que se envíe el {{ fulfil_at_formatted }}.",
+      "pending_without_fulfil_at": "Este artículo estará disponible para financiar desde {{ launch_at_formatted }} hasta {{ end_at_formatted }}.",
+      "ended_successfully_with_fulfil_at": "Este artículo estuvo disponible para financiar desde {{ launch_at_formatted }} hasta {{ end_at_formatted }}. Si tuvo éxito, se espera que se envíe el {{ fulfil_at_formatted }}.",
+      "ended_successfully_without_fulfil_at": "Este artículo estuvo disponible para financiar desde {{ launch_at_formatted }} hasta {{ end_at_formatted }}.",
+      "ended_unsuccessfully": "Este artículo no alcanzó su meta de financiamiento el {{ ended_at_formatted }}.",
+      "completed_successfully": "Este artículo alcanzó su meta de financiamiento el {{ ended_at_formatted }} y fue enviado el {{ fulfilled_at_formatted }}.",
+      "completed_unsuccessfully": "Este artículo no alcanzó su meta de financiamiento el {{ ended_at_formatted }}."
+    },
+    "campaign_progress": {
+      "total_units": "{{ total_units_formatted }} de {{ goal_total_units_formatted }} unidades vendidas.",
+      "total_value": "{{ total_value_formatted }} de {{ goal_total_value_formatted }} recaudados."
+    }
+  }
+}
